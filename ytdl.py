@@ -6,7 +6,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 import os
-from typing import Any
+from typing import Any, cast
 
 from yt_dlp import YoutubeDL
 from yt_dlp.utils import DownloadError
@@ -212,14 +212,14 @@ def postprocessor_hook(status: dict[str, Any]) -> None:
 
 
 def inspect_video(url: str) -> dict[str, Any]:
-    inspect_options = {
+    inspect_options: dict[str, Any] = {
         "quiet": True,
         "skip_download": True,
         "noplaylist": True,
         "extract_flat": False,
     }
-    with YoutubeDL(inspect_options) as ydl:
-        return ydl.extract_info(url, download=False)
+    with YoutubeDL(cast(Any, inspect_options)) as ydl:
+        return cast(dict[str, Any], ydl.extract_info(url, download=False))
 
 
 def list_video_formats(url: str) -> None:
@@ -501,7 +501,9 @@ def download_video(config: DownloadConfig) -> Path | None:
         print(f"Selected quality: {config.quality} (audio + video)")
 
     options = build_download_options(config)
-    with YoutubeDL(options) as ydl:
+    # yt-dlp's type stubs expose a narrower internal params type than the
+    # public options mapping used by its Python API.
+    with YoutubeDL(cast(Any, options)) as ydl:
         result = ydl.extract_info(config.url, download=True)
 
         requested_downloads = result.get("requested_downloads") or []
